@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lecture Captures - Gallery</title>
+  <link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+
+  <header>
+    <h1>Captured Slides</h1>
+    <div class="actions">
+      <button id="downloadPdfBtn" class="primary-btn">Download PDF</button>
+      <button id="clearAllBtn" class="danger-btn">Clear All</button>
+    </div>
+  </header>
+
+  <main id="gallery-container">
+    <p id="empty-state">No images captured yet.</p>
+    <div id="grid"></div>
+  </main>
+
+  <script src="jspdf.min.js"></script>
+  <script src="gallery.js"></script>
+</body>
+</html>

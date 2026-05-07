@@ -1,0 +1,85 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 15px 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin: 0;
+  color: #333;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.primary-btn {
+  background-color: #4CAF50;
+  color: white;
+  margin-right: 10px;
+}
+
+.danger-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #f44336;
+  color: white;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 0 0 5px 5px;
+}
+
+#empty-state {
+  text-align: center;
+  color: #777;
+  font-size: 18px;
+  margin-top: 50px;
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.card img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px 8px 0 0;
+}
+
+.card-info {
+  padding: 10px;
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}

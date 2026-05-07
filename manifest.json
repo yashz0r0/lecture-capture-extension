@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Lecture Capture",
+  "version": "1.0",
+  "description": "Capture lecture slides from YouTube videos",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "*://*.youtube.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}

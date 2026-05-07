@@ -4,28 +4,49 @@ const intervalSelect = document.getElementById("interval");
 const galleryBtn = document.getElementById("galleryBtn");
 
 startBtn.addEventListener("click", async () => {
-  const interval = intervalSelect.value;
+  try {
+    const interval = intervalSelect.value;
 
-  const [tab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
 
-  chrome.tabs.sendMessage(tab.id, {
-    action: "START_CAPTURE",
-    interval: interval,
-  });
+    if (!tab || !tab.id) return;
+
+    chrome.tabs.sendMessage(tab.id, {
+      action: "START_CAPTURE",
+      interval: interval,
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        alert("Please make sure you are on a YouTube video page and refresh the page.");
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 stopBtn.addEventListener("click", async () => {
-  const [tab] = await chrome.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
 
-  chrome.tabs.sendMessage(tab.id, {
-    action: "STOP_CAPTURE",
-  });
+    if (!tab || !tab.id) return;
+
+    chrome.tabs.sendMessage(tab.id, {
+      action: "STOP_CAPTURE",
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        // Ignore errors on stop if script isn't there
+        console.log(chrome.runtime.lastError.message);
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 galleryBtn.addEventListener("click", () => {

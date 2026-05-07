@@ -29,44 +29,60 @@ function stopCapture() {
 }
 
 function captureFrame() {
-  const video = document.querySelector("video");
+  try {
+    const video = document.querySelector("video");
 
-  if (!video) {
-    console.log("No video found");
-    return;
+    if (!video) {
+      console.log("No video found");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const image = canvas.toDataURL("image/png");
+
+    if (image === previousImage) {
+      console.log("Duplicate frame skipped");
+      return;
+    }
+
+    previousImage = image;
+
+    const timestamp = formatTime(video.currentTime);
+
+    saveCapture({
+      image,
+      timestamp,
+      videoTitle: document.title,
+      url: window.location.href,
+    });
+
+    console.log("Captured at:", timestamp);
+  } catch (error) {
+    console.error("Capture failed or extension context invalidated:", error);
+    stopCapture();
   }
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-  const image = canvas.toDataURL("image/png");
-
-  if (image === previousImage) {
-    console.log("Duplicate frame skipped");
-    return;
-  }
-
-  previousImage = image;
-
-  const timestamp = formatTime(video.currentTime);
-
-  saveCapture({
-    image,
-    timestamp,
-    videoTitle: document.title,
-    url: window.location.href,
-  });
-
-  console.log("Captured at:", timestamp);
 }
 
 function saveCapture(capture) {
+  if (!chrome.runtime?.id) {
+    console.log("Extension reloaded. Stopping capture.");
+    stopCapture();
+    return;
+  }
+
   chrome.storage.local.get(["captures"], (result) => {
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError);
+      return;
+    }
+
     const captures = result.captures || [];
 
     captures.push(capture);

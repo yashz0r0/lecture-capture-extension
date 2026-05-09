@@ -46,11 +46,12 @@ function captureFrame() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const smallCanvas = document.createElement("canvas");
-    smallCanvas.width = 64;
-    smallCanvas.height = 64;
+    const thumbSize = 128;
+    smallCanvas.width = thumbSize;
+    smallCanvas.height = thumbSize;
     const smallCtx = smallCanvas.getContext("2d");
-    smallCtx.drawImage(video, 0, 0, 64, 64);
-    const currentImageData = smallCtx.getImageData(0, 0, 64, 64);
+    smallCtx.drawImage(video, 0, 0, thumbSize, thumbSize);
+    const currentImageData = smallCtx.getImageData(0, 0, thumbSize, thumbSize);
 
     const image = canvas.toDataURL("image/png");
     const timestamp = formatTime(video.currentTime);
@@ -63,13 +64,14 @@ function captureFrame() {
 
     if (previousImageData) {
       const sim = calculateSimilarity(previousImageData, currentImageData);
+      console.log(`Similarity: ${sim.toFixed(4)}`);
       
-      if (sim >= 0.99) {
+      if (sim >= 0.995) {
         console.log("Duplicate frame skipped");
         return;
       }
 
-      if (sim >= 0.95) {
+      if (sim >= 0.98) {
         console.log("Updating last capture with more info");
         previousImageData = currentImageData;
         updateLastCapture(capture);
@@ -142,17 +144,23 @@ function updateLastCapture(capture) {
 }
 
 function calculateSimilarity(imgData1, imgData2) {
-  let diff = 0;
+  let differentPixels = 0;
   const d1 = imgData1.data;
   const d2 = imgData2.data;
   const len = d1.length;
   
   for (let i = 0; i < len; i += 4) {
-    diff += Math.abs(d1[i] - d2[i]) + 
-            Math.abs(d1[i + 1] - d2[i + 1]) + 
-            Math.abs(d1[i + 2] - d2[i + 2]);
+    const rDiff = Math.abs(d1[i] - d2[i]);
+    const gDiff = Math.abs(d1[i + 1] - d2[i + 1]);
+    const bDiff = Math.abs(d1[i + 2] - d2[i + 2]);
+    
+    // A pixel is considered "changed" if the color difference is significant enough
+    // This helps ignore video compression artifacts while catching text changes
+    if (rDiff > 25 || gDiff > 25 || bDiff > 25) {
+      differentPixels++;
+    }
   }
   
-  const maxDiff = (len / 4) * 255 * 3;
-  return 1 - (diff / maxDiff);
+  const totalPixels = len / 4;
+  return 1 - (differentPixels / totalPixels);
 }

@@ -50,6 +50,23 @@ button {
   border-radius: 0 0 5px 5px;
 }
 
+.restore-btn {
+  background-color: #4CAF50;
+  color: white;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 0;
+}
+
+.perm-delete-btn {
+  background-color: #f44336;
+  color: white;
+  width: 100%;
+  padding: 8px;
+  border-radius: 0 0 5px 5px;
+}
+
 #empty-state {
   text-align: center;
   color: #777;

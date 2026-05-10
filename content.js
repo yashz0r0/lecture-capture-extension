@@ -40,10 +40,19 @@ function captureFrame() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const MAX_WIDTH = 800;
+    let drawWidth = video.videoWidth;
+    let drawHeight = video.videoHeight;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (drawWidth > MAX_WIDTH) {
+      drawHeight = Math.floor(drawHeight * (MAX_WIDTH / drawWidth));
+      drawWidth = MAX_WIDTH;
+    }
+
+    canvas.width = drawWidth;
+    canvas.height = drawHeight;
+
+    ctx.drawImage(video, 0, 0, drawWidth, drawHeight);
 
     const smallCanvas = document.createElement("canvas");
     const thumbSize = 128;
@@ -53,7 +62,7 @@ function captureFrame() {
     smallCtx.drawImage(video, 0, 0, thumbSize, thumbSize);
     const currentImageData = smallCtx.getImageData(0, 0, thumbSize, thumbSize);
 
-    const image = canvas.toDataURL("image/png");
+    const image = canvas.toDataURL("image/jpeg", 0.3);
     const timestamp = formatTime(video.currentTime);
     const capture = {
       image,

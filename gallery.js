@@ -147,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
       let deletedCaptures = result.deletedCaptures || [];
       
       const deletedCapture = captures[index];
+      deletedCapture.originalIndex = parseInt(index, 10);
       lastDeletedState = { type: 'single', index: parseInt(index, 10), capture: deletedCapture };
       
       captures.splice(index, 1);
@@ -165,7 +166,8 @@ document.addEventListener("DOMContentLoaded", () => {
       let deletedCaptures = result.deletedCaptures || [];
       
       const restored = deletedCaptures.splice(index, 1)[0];
-      captures.push(restored);
+      const insertIndex = restored.originalIndex !== undefined ? Math.min(restored.originalIndex, captures.length) : captures.length;
+      captures.splice(insertIndex, 0, restored);
       
       // If we are restoring, it might invalidate the undo state if they overlap
       hideUndoButton();
@@ -194,7 +196,9 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (captures.length > 0) {
           lastDeletedState = { type: 'all', captures: [...captures] };
-          deletedCaptures = [...captures.reverse(), ...deletedCaptures];
+          
+          const capturesWithIndex = captures.map((c, i) => ({...c, originalIndex: i}));
+          deletedCaptures = [...capturesWithIndex.reverse(), ...deletedCaptures];
           
           chrome.storage.local.set({ captures: [], deletedCaptures }, () => {
             loadCaptures();

@@ -1,8 +1,12 @@
 let captureInterval;
 let previousImageData = null;
+let lastCaptureVideoTime = null;
+let targetInterval = 0;
+let captureQuality = 0.3;
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message.action === "START_CAPTURE") {
+    captureQuality = parseFloat(message.quality) || 0.3;
     startCapture(message.interval);
   }
 
@@ -14,16 +18,31 @@ chrome.runtime.onMessage.addListener((message) => {
 function startCapture(seconds) {
   stopCapture();
 
-  captureInterval = setInterval(() => {
-    captureFrame();
-  }, seconds * 1000);
+  targetInterval = seconds;
+  const video = document.querySelector("video");
+  lastCaptureVideoTime = video ? video.currentTime : 0;
 
-  alert(`Capture started every ${seconds} seconds`);
+  // Poll frequently (every 250ms real time) to check video time
+  captureInterval = setInterval(() => {
+    const v = document.querySelector("video");
+    if (!v) return;
+
+    if (v.currentTime - lastCaptureVideoTime >= targetInterval) {
+      captureFrame();
+      lastCaptureVideoTime = v.currentTime;
+    } else if (v.currentTime < lastCaptureVideoTime) {
+      // User scrubbed backwards, reset tracker
+      lastCaptureVideoTime = v.currentTime;
+    }
+  }, 250);
+
+  alert(`Capture started every ${seconds} seconds of video time`);
 }
 
 function stopCapture() {
   if (captureInterval) {
     clearInterval(captureInterval);
+    captureInterval = null;
     alert("Capture stopped");
   }
 }
@@ -62,7 +81,7 @@ function captureFrame() {
     smallCtx.drawImage(video, 0, 0, thumbSize, thumbSize);
     const currentImageData = smallCtx.getImageData(0, 0, thumbSize, thumbSize);
 
-    const image = canvas.toDataURL("image/jpeg", 0.3);
+    const image = canvas.toDataURL("image/jpeg", captureQuality);
     const timestamp = formatTime(video.currentTime);
     const capture = {
       image,

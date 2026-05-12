@@ -18,6 +18,24 @@
     </div>
   </header>
 
+  <div id="exportSettings" style="padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+    <div>
+      <h3 style="margin: 0 0 5px 0; color: #333;">PDF Export Quality</h3>
+      <p style="font-size: 14px; color: #666; margin: 0;">Adjust the slider to balance visual crispness with final PDF file size.</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 30px; flex-wrap: wrap;">
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <input type="range" id="exportQualitySlider" min="0.1" max="1.0" step="0.1" value="0.6" style="width: 200px; cursor: pointer;">
+        <span style="font-weight: bold; font-size: 14px; margin-top: 5px;">Quality: <span id="qualityValue">0.6</span></span>
+      </div>
+      <div style="text-align: right; min-width: 120px; border-left: 2px solid #eee; padding-left: 20px;">
+        <div style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px;">Estimated Size</div>
+        <div style="font-size: 18px; font-weight: bold; color: #4CAF50;"><span id="estimatedSize">-- KB</span></div>
+        <div style="font-size: 12px; color: #999;">per slide</div>
+      </div>
+    </div>
+  </div>
+
   <main id="gallery-container">
     <p id="empty-state">No images captured yet.</p>
     <div id="grid"></div>

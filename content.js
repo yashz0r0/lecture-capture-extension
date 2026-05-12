@@ -2,12 +2,10 @@ let captureInterval;
 let previousImageData = null;
 let lastCaptureVideoTime = null;
 let targetInterval = 0;
-let captureQuality = 0.3;
 let customIgnoreBox = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "START_CAPTURE") {
-    captureQuality = parseFloat(message.quality) || 0.3;
     startCapture(message.interval);
   }
 
@@ -151,7 +149,8 @@ function captureFrame() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    const MAX_WIDTH = 800;
+    // Capture at highest quality (1080p equivalent) for gallery previewing
+    const MAX_WIDTH = 1920;
     let drawWidth = video.videoWidth;
     let drawHeight = video.videoHeight;
 
@@ -185,7 +184,9 @@ function captureFrame() {
 
     const currentImageData = smallCtx.getImageData(0, 0, thumbSize, thumbSize);
 
-    const image = canvas.toDataURL("image/jpeg", captureQuality);
+    // Save absolute highest quality to storage. 
+    // The gallery will compress it later based on user preference.
+    const image = canvas.toDataURL("image/jpeg", 1.0);
     const timestamp = formatTime(video.currentTime);
     const capture = {
       image,

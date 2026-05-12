@@ -24,7 +24,6 @@ drawBtn.addEventListener("click", async () => {
 startBtn.addEventListener("click", async () => {
   try {
     const interval = intervalSelect.value;
-    const quality = document.getElementById("quality").value;
 
     const [tab] = await chrome.tabs.query({
       active: true,
@@ -36,7 +35,6 @@ startBtn.addEventListener("click", async () => {
     chrome.tabs.sendMessage(tab.id, {
       action: "START_CAPTURE",
       interval: interval,
-      quality: quality,
     }, (response) => {
       if (chrome.runtime.lastError) {
         alert("Please make sure you are on a YouTube video page and refresh the page.");

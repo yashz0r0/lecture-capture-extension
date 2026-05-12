@@ -3,8 +3,9 @@ let previousImageData = null;
 let lastCaptureVideoTime = null;
 let targetInterval = 0;
 let captureQuality = 0.3;
+let customIgnoreBox = null;
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "START_CAPTURE") {
     captureQuality = parseFloat(message.quality) || 0.3;
     startCapture(message.interval);
@@ -12,6 +13,12 @@ chrome.runtime.onMessage.addListener((message) => {
 
   if (message.action === "STOP_CAPTURE") {
     stopCapture();
+  }
+
+  if (message.action === "START_SELECTION") {
+    startSelection();
+    sendResponse({ status: "started" });
+    return true;
   }
 });
 
@@ -47,6 +54,91 @@ function stopCapture() {
   }
 }
 
+function startSelection() {
+  const video = document.querySelector("video");
+  if (!video) {
+    alert("No video found on this page.");
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100vw";
+  overlay.style.height = "100vh";
+  overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
+  overlay.style.zIndex = "999999";
+  overlay.style.cursor = "crosshair";
+  
+  const selectionBox = document.createElement("div");
+  selectionBox.style.position = "absolute";
+  selectionBox.style.border = "2px dashed red";
+  selectionBox.style.backgroundColor = "rgba(255, 0, 0, 0.2)";
+  selectionBox.style.display = "none";
+  overlay.appendChild(selectionBox);
+
+  document.body.appendChild(overlay);
+
+  let isDrawing = false;
+  let startX, startY;
+
+  const onMouseDown = (e) => {
+    isDrawing = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    selectionBox.style.left = `${startX}px`;
+    selectionBox.style.top = `${startY}px`;
+    selectionBox.style.width = "0px";
+    selectionBox.style.height = "0px";
+    selectionBox.style.display = "block";
+  };
+
+  const onMouseMove = (e) => {
+    if (!isDrawing) return;
+    const currentX = e.clientX;
+    const currentY = e.clientY;
+    
+    selectionBox.style.left = `${Math.min(startX, currentX)}px`;
+    selectionBox.style.top = `${Math.min(startY, currentY)}px`;
+    selectionBox.style.width = `${Math.abs(currentX - startX)}px`;
+    selectionBox.style.height = `${Math.abs(currentY - startY)}px`;
+  };
+
+  const onMouseUp = (e) => {
+    isDrawing = false;
+    
+    const rectX = Math.min(startX, e.clientX);
+    const rectY = Math.min(startY, e.clientY);
+    const rectW = Math.abs(e.clientX - startX);
+    const rectH = Math.abs(e.clientY - startY);
+
+    const videoRect = video.getBoundingClientRect();
+    
+    if (rectW > 10 && rectH > 10) {
+      const relX = (rectX - videoRect.left) / videoRect.width;
+      const relY = (rectY - videoRect.top) / videoRect.height;
+      const relW = rectW / videoRect.width;
+      const relH = rectH / videoRect.height;
+      
+      customIgnoreBox = {
+        x: Math.max(0, relX),
+        y: Math.max(0, relY),
+        width: Math.min(1 - Math.max(0, relX), relW),
+        height: Math.min(1 - Math.max(0, relY), relH)
+      };
+      
+      alert("Custom ignore area saved! You can now start the capture.");
+    }
+
+    document.body.removeChild(overlay);
+  };
+
+  overlay.addEventListener("mousedown", onMouseDown);
+  overlay.addEventListener("mousemove", onMouseMove);
+  overlay.addEventListener("mouseup", onMouseUp);
+}
+
 function captureFrame() {
   try {
     const video = document.querySelector("video");
@@ -78,7 +170,19 @@ function captureFrame() {
     smallCanvas.width = thumbSize;
     smallCanvas.height = thumbSize;
     const smallCtx = smallCanvas.getContext("2d");
-    smallCtx.drawImage(video, 0, 0, thumbSize, thumbSize);
+
+    // Draw full video to thumbnail
+    smallCtx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, thumbSize, thumbSize);
+    
+    // Efficiency Upgrade: Clear the custom ignored pixels from the canvas directly
+    if (customIgnoreBox) {
+      const cx = customIgnoreBox.x * thumbSize;
+      const cy = customIgnoreBox.y * thumbSize;
+      const cw = customIgnoreBox.width * thumbSize;
+      const ch = customIgnoreBox.height * thumbSize;
+      smallCtx.clearRect(cx, cy, cw, ch);
+    }
+
     const currentImageData = smallCtx.getImageData(0, 0, thumbSize, thumbSize);
 
     const image = canvas.toDataURL("image/jpeg", captureQuality);
@@ -173,22 +277,39 @@ function updateLastCapture(capture) {
 
 function calculateSimilarity(imgData1, imgData2) {
   let differentPixels = 0;
+  let totalValidPixels = 0;
   const d1 = imgData1.data;
   const d2 = imgData2.data;
   const len = d1.length;
   
   for (let i = 0; i < len; i += 4) {
-    const rDiff = Math.abs(d1[i] - d2[i]);
-    const gDiff = Math.abs(d1[i + 1] - d2[i + 1]);
-    const bDiff = Math.abs(d1[i + 2] - d2[i + 2]);
+    // If the pixel was cleared by custom ignore box, its alpha is 0
+    if (d2[i + 3] === 0) continue;
     
-    // A pixel is considered "changed" if the color difference is significant enough
-    // This helps ignore video compression artifacts while catching text changes
+    totalValidPixels++;
+    
+    // Using manual absolute value is slightly faster than Math.abs
+    let rDiff = d1[i] - d2[i];
+    let gDiff = d1[i + 1] - d2[i + 1];
+    let bDiff = d1[i + 2] - d2[i + 2];
+    
+    if (rDiff < 0) rDiff = -rDiff;
+    if (gDiff < 0) gDiff = -gDiff;
+    if (bDiff < 0) bDiff = -bDiff;
+    
     if (rDiff > 25 || gDiff > 25 || bDiff > 25) {
       differentPixels++;
+      
+      // Early Exit Optimization:
+      // If we find more than 400 different pixels (~2.4% of screen), 
+      // we already know similarity is < 0.98.
+      // We can stop checking the rest of the 16,000 pixels!
+      if (differentPixels > 400) {
+        return 0; 
+      }
     }
   }
   
-  const totalPixels = len / 4;
-  return 1 - (differentPixels / totalPixels);
+  if (totalValidPixels === 0) return 1; 
+  return 1 - (differentPixels / totalValidPixels);
 }

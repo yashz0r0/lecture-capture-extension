@@ -2,6 +2,24 @@ const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 const intervalSelect = document.getElementById("interval");
 const galleryBtn = document.getElementById("galleryBtn");
+const drawBtn = document.getElementById("drawBtn");
+
+drawBtn.addEventListener("click", async () => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) return;
+
+    chrome.tabs.sendMessage(tab.id, { action: "START_SELECTION" }, (response) => {
+      if (chrome.runtime.lastError) {
+        alert("Please make sure you are on a YouTube video page and refresh the page.");
+      } else {
+        window.close(); // Close popup so user can draw
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 startBtn.addEventListener("click", async () => {
   try {

@@ -134,7 +134,7 @@ function startSelection() {
         height: Math.min(1 - Math.max(0, relY), relH)
       };
       
-      alert("Custom ignore area saved! You can now start the capture.");
+      alert("Selected area will now be ignored when checking for new slides. You can now start the capture!");
     }
 
     document.body.removeChild(overlay);

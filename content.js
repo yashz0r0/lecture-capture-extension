@@ -18,6 +18,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ status: "started" });
     return true;
   }
+
+  if (message.action === "MANUAL_CAPTURE") {
+    captureFrame(true);
+    showToast("Slide Captured Manually!");
+    sendResponse({ status: "captured" });
+    return true;
+  }
 });
 
 function startCapture(seconds) {
@@ -46,6 +53,7 @@ function startCapture(seconds) {
 
 function stopCapture() {
   if (captureInterval) {
+    captureFrame(); // Capture final state before stopping
     clearInterval(captureInterval);
     captureInterval = null;
     alert("Capture stopped");
@@ -137,7 +145,7 @@ function startSelection() {
   overlay.addEventListener("mouseup", onMouseUp);
 }
 
-function captureFrame() {
+function captureFrame(forceCapture = false) {
   try {
     const video = document.querySelector("video");
 
@@ -149,8 +157,8 @@ function captureFrame() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    // Capture at highest quality (1080p equivalent) for gallery previewing
-    const MAX_WIDTH = 1920;
+    // Capture at highest quality (up to 4K) for gallery previewing
+    const MAX_WIDTH = 3840;
     let drawWidth = video.videoWidth;
     let drawHeight = video.videoHeight;
 
@@ -165,7 +173,7 @@ function captureFrame() {
     ctx.drawImage(video, 0, 0, drawWidth, drawHeight);
 
     const smallCanvas = document.createElement("canvas");
-    const thumbSize = 128;
+    const thumbSize = 256;
     smallCanvas.width = thumbSize;
     smallCanvas.height = thumbSize;
     const smallCtx = smallCanvas.getContext("2d");
@@ -195,16 +203,17 @@ function captureFrame() {
       url: window.location.href,
     };
 
-    if (previousImageData) {
+    if (previousImageData && !forceCapture) {
       const sim = calculateSimilarity(previousImageData, currentImageData);
       console.log(`Similarity: ${sim.toFixed(4)}`);
       
-      if (sim >= 0.995) {
+      // More accurate thresholds for 256x256 thumbnail
+      if (sim >= 0.998) {
         console.log("Duplicate frame skipped");
         return;
       }
 
-      if (sim >= 0.98) {
+      if (sim >= 0.99) {
         console.log("Updating last capture with more info");
         previousImageData = currentImageData;
         updateLastCapture(capture);
@@ -302,10 +311,9 @@ function calculateSimilarity(imgData1, imgData2) {
       differentPixels++;
       
       // Early Exit Optimization:
-      // If we find more than 400 different pixels (~2.4% of screen), 
-      // we already know similarity is < 0.98.
-      // We can stop checking the rest of the 16,000 pixels!
-      if (differentPixels > 400) {
+      // For 256x256, 1% is ~655 pixels. 
+      // If we find more than 1000 different pixels, similarity is < 0.985.
+      if (differentPixels > 1000) {
         return 0; 
       }
     }
@@ -313,4 +321,27 @@ function calculateSimilarity(imgData1, imgData2) {
   
   if (totalValidPixels === 0) return 1; 
   return 1 - (differentPixels / totalValidPixels);
+}
+
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.innerText = message;
+  toast.style.position = "fixed";
+  toast.style.bottom = "20px";
+  toast.style.right = "20px";
+  toast.style.backgroundColor = "#4CAF50";
+  toast.style.color = "white";
+  toast.style.padding = "10px 20px";
+  toast.style.borderRadius = "5px";
+  toast.style.zIndex = "9999999";
+  toast.style.fontSize = "16px";
+  toast.style.fontFamily = "sans-serif";
+  toast.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
+  toast.style.transition = "opacity 0.3s";
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    setTimeout(() => document.body.removeChild(toast), 300);
+  }, 2000);
 }

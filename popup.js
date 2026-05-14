@@ -3,6 +3,7 @@ const stopBtn = document.getElementById("stopBtn");
 const intervalSelect = document.getElementById("interval");
 const galleryBtn = document.getElementById("galleryBtn");
 const drawBtn = document.getElementById("drawBtn");
+const manualBtn = document.getElementById("manualBtn");
 
 drawBtn.addEventListener("click", async () => {
   try {
@@ -14,6 +15,23 @@ drawBtn.addEventListener("click", async () => {
         alert("Please make sure you are on a YouTube video page and refresh the page.");
       } else {
         window.close(); // Close popup so user can draw
+      }
+    });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
+manualBtn.addEventListener("click", async () => {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) return;
+
+    chrome.tabs.sendMessage(tab.id, { action: "MANUAL_CAPTURE" }, (response) => {
+      if (chrome.runtime.lastError) {
+        alert("Please make sure you are on a YouTube video page and refresh the page.");
+      } else {
+        window.close(); // Close popup so user can continue watching
       }
     });
   } catch (error) {

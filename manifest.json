@@ -7,6 +7,18 @@
   "host_permissions": [
     "*://*.youtube.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "manual-capture": {
+      "suggested_key": {
+        "default": "Alt+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Manually capture a single slide"
+    }
+  },
   "action": {
     "default_popup": "popup.html"
   },

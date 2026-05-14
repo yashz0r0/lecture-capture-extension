@@ -227,12 +227,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentView === 'trash') {
           document.querySelectorAll(".restore-btn").forEach(btn => {
             btn.addEventListener("click", (e) => {
+              e.target.disabled = true;
               const index = e.target.getAttribute("data-index");
               restoreCapture(index);
             });
           });
           document.querySelectorAll(".perm-delete-btn").forEach(btn => {
             btn.addEventListener("click", (e) => {
+              e.target.disabled = true;
               const index = e.target.getAttribute("data-index");
               permanentlyDeleteCapture(index);
             });
@@ -240,6 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           document.querySelectorAll(".delete-btn").forEach(btn => {
             btn.addEventListener("click", (e) => {
+              e.target.disabled = true;
               const index = e.target.getAttribute("data-index");
               deleteCapture(index);
             });
@@ -255,6 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
       let deletedCaptures = result.deletedCaptures || [];
       
       const deletedCapture = captures[index];
+      if (!deletedCapture) return;
+
       deletedCapture.originalIndex = parseInt(index, 10);
       lastDeletedState = { type: 'single', index: parseInt(index, 10), capture: deletedCapture };
       
@@ -273,7 +278,10 @@ document.addEventListener("DOMContentLoaded", () => {
       let captures = result.captures || [];
       let deletedCaptures = result.deletedCaptures || [];
       
-      const restored = deletedCaptures.splice(index, 1)[0];
+      const restoredArray = deletedCaptures.splice(index, 1);
+      if (restoredArray.length === 0) return;
+      
+      const restored = restoredArray[0];
       const insertIndex = restored.originalIndex !== undefined ? Math.min(restored.originalIndex, captures.length) : captures.length;
       captures.splice(insertIndex, 0, restored);
       
@@ -289,6 +297,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function permanentlyDeleteCapture(index) {
     chrome.storage.local.get(["deletedCaptures"], (result) => {
       let deletedCaptures = result.deletedCaptures || [];
+      if (index >= deletedCaptures.length) return;
+      
       deletedCaptures.splice(index, 1);
       chrome.storage.local.set({ deletedCaptures }, () => {
         loadCaptures();
